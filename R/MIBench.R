@@ -125,7 +125,8 @@ MIBench <- function(dgp = NULL,
       imputations <- quiet(MIalgorithm(df$D, m = m))
 
       res_iter <-
-        analyze_mi(imputations, analysis_model, congenial = congenial)
+        tryCatch(analyze_mi(imputations, analysis_model, congenial = congenial), error = function(e) NA)
+
       res_list[[i]] <- res_iter
 
       if (store_runs) {
@@ -161,7 +162,10 @@ MIBench <- function(dgp = NULL,
   }
   if (start_i == 1) {
     res <-
-      summarize_mi_analysis(res_list, true_values)
+      summarize_mi_analysis(Filter(Negate(anyNA), res_list), true_values)
+
+    # Number of unsucessful runs
+    #sum(sapply(res_list, anyNA))
 
     if (compare) {
       res_complete <-
