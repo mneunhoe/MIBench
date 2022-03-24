@@ -39,19 +39,21 @@ MIBench <- function(dgp = NULL,
 
   res_list <- vector("list", length = n_iter)
 
-  if(store_runs){
-    path <- paste0("experiments/",dgp,"/", algorithm_prefix, "/")
-    dir.create(path, recursive = T)
+  if (store_runs) {
+    path <- paste0("experiments/", dgp, "/", algorithm_prefix, "/")
+    if (!dir.exists(path)) {
+      dir.create(path, recursive = T)
+    }
   }
 
   if (compare)
     res_list_complete <- vector("list", length = n_iter)
-  if(!load_runs){
+  if (!load_runs) {
     cli::cli_progress_bar("Repeating the imputations", total = length(start_i:n_iter))
     for (i in start_i:n_iter) {
       if (dgp == "khjs-mar") {
         df <-
-         dgp_fct(
+          dgp_fct(
             n_data = n_data,
             missingness = "mar1",
             dgp_name = "amelia",
@@ -60,7 +62,7 @@ MIBench <- function(dgp = NULL,
         analysis_model <- function(x) {
           lm(x[, 1] ~ x[, 2] + x[, 3])
         }
-        true_values <- c(0, -0.11, -0.089)
+        true_values <- c(0,-0.11,-0.089)
       }
       if (dgp == "mixed-mcar") {
         df <-
@@ -73,7 +75,7 @@ MIBench <- function(dgp = NULL,
         analysis_model <- function(x) {
           lm(x[, 3] ~ x[, 1] * x[, 2])
         }
-        true_values <- c(0, 1, 0, -2)
+        true_values <- c(0, 1, 0,-2)
       }
 
       if (dgp == "cg-mar") {
@@ -109,7 +111,6 @@ MIBench <- function(dgp = NULL,
       }
 
       if (compare) {
-
         model <- analysis_model(df$D_full)
 
         tmp <- cbind(coef(model), confint(model))
@@ -123,28 +124,30 @@ MIBench <- function(dgp = NULL,
 
       imputations <- quiet(MIalgorithm(df$D, m = m))
 
-      res_iter <- analyze_mi(imputations, analysis_model, congenial = congenial)
+      res_iter <-
+        analyze_mi(imputations, analysis_model, congenial = congenial)
       res_list[[i]] <- res_iter
 
-      if(store_runs){
-        saveRDS(imputations, paste0(path, "imputations_",i,".RDS"))
-        saveRDS(res_iter, paste0(path, "analysis_",i,".RDS"))
+      if (store_runs) {
+        saveRDS(imputations, paste0(path, "imputations_", i, ".RDS"))
+        saveRDS(res_iter, paste0(path, "analysis_", i, ".RDS"))
 
       }
       cli::cli_progress_update()
     }
   }
-  if(load_runs) {
+  if (load_runs) {
+    path <- paste0("experiments/", dgp, "/", algorithm_prefix, "/")
 
-    path <- paste0("experiments/",dgp,"/", algorithm_prefix, "/")
-
-    res_list <- lapply(start_i:n_iter, function(i) readRDS(paste0(path, "analysis_",i,".RDS")))
+    res_list <-
+      lapply(start_i:n_iter, function(i)
+        readRDS(paste0(path, "analysis_", i, ".RDS")))
 
     if (dgp == "khjs-mar") {
-      true_values <- c(0, -0.11, -0.089)
+      true_values <- c(0,-0.11,-0.089)
     }
     if (dgp == "mixed-mcar") {
-      true_values <- c(0, 1, 0, -2)
+      true_values <- c(0, 1, 0,-2)
     }
 
     if (dgp == "cg-mar") {
@@ -156,7 +159,7 @@ MIBench <- function(dgp = NULL,
       true_values <- c(0, 1, 1, 1, 1)
     }
   }
-  if(start_i == 1){
+  if (start_i == 1) {
     res <-
       summarize_mi_analysis(res_list, true_values)
 
