@@ -15,7 +15,7 @@ anes_data <- function(dv = "vote", miss.prop = .1) {
     matrix(rnorm(ncol(anes[,-c(2, 3, 9, 11)]) * ncol(miss.data)), ncol(miss.data), ncol(anes[,-c(2, 3, 9, 11)]))
   miss.eta <- miss.data %*% coef
   miss.error <-
-    rdata.frame(
+    mi::rdata.frame(
       nrow(anes),
       restrictions = "none",
       n_full = ncol(anes[,-c(2, 3, 9, 11)]),

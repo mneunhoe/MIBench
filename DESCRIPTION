@@ -14,7 +14,10 @@ Suggests:
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Imports: 
-    magrittr
+    abind,
+    magrittr,
+    mi,
+    mice
 Depends: 
     R (>= 2.10)
 LazyData: true
