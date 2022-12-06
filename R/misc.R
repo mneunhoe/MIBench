@@ -90,7 +90,8 @@ anes_data <- function(dv = "vote", miss.prop = .1) {
     D = anes,
     D_mis = anes.miss,
     analysis_model = analysis_model,
-    true_values = true_values
+    true_values = true_values,
+    dgp_name = paste0("anes_data_", dv, "_", gsub("\\.", "", paste(miss.prop)))
   )
   attr(res, "seed") <- store_seed
 
