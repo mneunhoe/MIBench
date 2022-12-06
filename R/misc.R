@@ -35,7 +35,7 @@ tbm_data <-
           X9.10[, 2] < 2.5,
           c(
             X1 - X1 ^ 2 - X2 ^ 2  - 15 * X1 * X2 * X9.10[, 2] + poly(X9.10[, 2], 3, raw =
-                                                                       TRUE) %*% c(10,-5, 0.9)
+                                                                       TRUE) %*% c(10, -5, 0.9)
           ),
           1750 + 350 * X9.10[, 2]
         )
@@ -72,27 +72,42 @@ tbm_data <-
       return(as.matrix(temp.data))
     }
 
-
+    store_seed <- .Random.seed
     #Common mean vector for irrelevant variables
     irr_mean_vec <- sample(2:10, 30, replace = TRUE)
-    D <- data.gen(DGP = complexity, n = n, mean.vec = irr_mean_vec)
+    D <- data.gen(DGP = complexity,
+                  n = n,
+                  mean.vec = irr_mean_vec)
     ## 100 train datasets
 
     if (missingness == "complete") {
-      return(list(D, D))
+      D_mis <- D
     } else if (missingness == "mcar1") {
       U_M <- array(runif(prod(dim(D))), dim(D))
       M <- U_M > 0.19
-      M[, 1] <- T
+      M[, 1] <- TRUE
       D_mis <- D
       D_mis[!M] <- NA
 
-      return(list(D, D_mis))
+
 
     }
 
-  }
+    res <- list(
+      D = D,
+      D_mis = D_mis,
+      analysis_model = function(x) {
+        lm(x[, 1] ~ x[, 2] + x[, 3] + x[, 4] + x[, 11])
+      },
+      true_values = c(0, 1, 1, 1, 1),
+      dgp_name = paste0("tbm_data_", missingness)
+    )
+    attr(res, "seed") <- store_seed
 
+
+    return(res)
+
+  }
 
 
 
@@ -100,14 +115,15 @@ tbm_data <-
 mixed_data <-
   function(n = 1000,
            missingness = "mcar1",
-           coefs = c(0, 1, 0,-2)) {
+           coefs = c(0, 1, 0, -2)) {
+    store_seed <- .Random.seed
     x <- rnorm(n)
     bin <- rbinom(n, 1, 0.5)
 
     y <-
       coefs[1] + coefs[2] * x + coefs[3] * bin + coefs[4] * x * bin + rnorm(n, 0, 0.2)
 
-    bimod <- c(rnorm(n / 2, -4), rnorm(n / 2, 4))
+    bimod <- c(rnorm(n / 2,-4), rnorm(n / 2, 4))
 
 
     D <- cbind(x, bin, y)
@@ -115,7 +131,7 @@ mixed_data <-
 
 
     if (missingness == "complete") {
-      return(list(D, D))
+      D_mis <- D
     } else if (missingness == "mcar1") {
       U_M <- array(runif(prod(dim(D))), dim(D))
       M <- U_M > 0.19
@@ -123,7 +139,72 @@ mixed_data <-
       D_mis <- D
       D_mis[!M] <- NA
 
-      return(list(D, D_mis))
+
+
+    }
+    res <- list(
+      D = D,
+      D_mis = D_mis,
+      analysis_model = function(x) {
+        lm(x[, 3] ~ x[, 1] * x[, 2])
+      },
+      true_values = coefs,
+      dgp_name = paste0("mixed_data_", missingness)
+    )
+    attr(res, "seed") <- store_seed
+
+
+    return(res)
+
+  }
+
+
+marbach_data <-
+  function(n = 1000,
+           missingness = "mar1") {
+    store_seed <- .Random.seed
+    coefs <- c(0, 0, 0, 1)
+    x <- runif(n,-5, 5)
+    z <- rbinom(n, 1, 0.5)
+
+    y <-
+      coefs[1] + coefs[2] * x + coefs[3] * z + coefs[4] * x * z + rnorm(n, 0, 1)
+
+
+    D <- cbind(y, x, z)
+
+
+
+    if (missingness == "complete") {
+      D_mis <- D
+    } else if (missingness == "mar1") {
+      missing_p <- runif(2, 0.1, 0.5)
+
+      p <- ifelse(z == 1, max(missing_p), min(missing_p))
+      y_miss <- rbinom(n, 1, p)
+
+
+
+      M <- array(TRUE, dim(D))
+
+
+      M[y_miss == 1, 1] <- FALSE
+
+
+      D_mis <- D
+      D_mis[!M] <- NA
+
+      res <- list(
+        D = D,
+        D_mis = D_mis,
+        analysis_model = function(x) {
+          lm(x[, 1] ~ x[, 2] * x[, 3])
+        },
+        true_values = coefs,
+        dgp_name = paste0("marbach_data_", missingness)
+      )
+      attr(res, "seed") <- store_seed
+      return(res)
 
     }
 
@@ -131,7 +212,9 @@ mixed_data <-
   }
 
 
+
 hd_data <- function(n = 500, missingness = "mar1") {
+  store_seed <- .Random.seed
   mus <- rep(0, 5)
 
   varcov <- matrix(0.8, nrow = 5, ncol = 5)
@@ -144,46 +227,61 @@ hd_data <- function(n = 500, missingness = "mar1") {
 
 
   if (missingness == "complete") {
-    return(list(D, D))
+    D_mis <- D
   } else if (missingness == "mar1") {
     U_M <- array(runif(prod(dim(D))), dim(D))
-    U_M[rowSums(D[, 3:5]) > 0,] <- 1
+    U_M[rowSums(D[, 3:5]) > 0, ] <- 1
     U_M[, 3:5] <- 1
     M <- U_M > 0.2
     D_mis <- D
     D_mis[!M] <- NA
 
-    return(list(D, D_mis))
+
 
   } else if (missingness == "mar2") {
     U_M <- array(runif(prod(dim(D))), dim(D))
-    U_M[rowSums(D[, 3:5]) > 0,] <- 1
+    U_M[rowSums(D[, 3:5]) > 0, ] <- 1
     U_M[, 3:5] <- 1
     M <- U_M > 0.5
     D_mis <- D
     D_mis[!M] <- NA
 
-    return(list(D, D_mis))
+
 
   } else if (missingness == "mar3") {
     U_M <- array(runif(prod(dim(D))), dim(D))
-    U_M[rowSums(D[, 3:5]) > 0,] <- 1
+    U_M[rowSums(D[, 3:5]) > 0, ] <- 1
     U_M[, 3:5] <- 1
     M <- U_M > 0.8
     D_mis <- D
     D_mis[!M] <- NA
 
-    return(list(D, D_mis))
+
 
   }
 
 
+  res <- list(
+    D = D,
+    D_mis = D_mis,
+    analysis_model = function(x) {
+      glm(x[, 1] ~ x[, 3] + x[, 4], family = binomial(link = logit))
+    },
+    true_values = c(-1.912, 1.912, 1.912),
+    dgp_name = paste0("hd_data_", missingness)
+  )
+  attr(res, "seed") <- store_seed
+
+
+  return(res)
 }
+
 
 
 
 amelia_data <- function(n = 500, missingness = "mcar1") {
   # set.seed(seed)
+  store_seed <- .Random.seed
 
   mus <- rep(0, 5)
   sds <- rep(1, 5)
@@ -192,18 +290,22 @@ amelia_data <- function(n = 500, missingness = "mcar1") {
 
   cor_mat <- matrix(
     c(
-      1 ,-.12,-.1,
-      .5,
-      .1,
+      1 ,
       -.12,
-      1,
-      .1,-.6,
-      .1,
       -.1,
+      .5,
+      .1,-.12,
+      1,
       .1,
-      1,-.5,
+      -.6,
+      .1,-.1,
       .1,
-      .5,-.6,-.5,
+      1,
+      -.5,
+      .1,
+      .5,
+      -.6,
+      -.5,
       1,
       .1,
       .1,
@@ -222,7 +324,7 @@ amelia_data <- function(n = 500, missingness = "mcar1") {
   D <- MASS::mvrnorm(n, mus, varcov)
 
   if (missingness == "complete") {
-    return(list(D, D))
+    D_mis <- D
   } else if (missingness == "mcar1") {
     U_M <- array(runif(prod(dim(D))), dim(D))
     M <- U_M > 0.06
@@ -230,7 +332,7 @@ amelia_data <- function(n = 500, missingness = "mcar1") {
     D_mis <- D
     D_mis[!M] <- NA
 
-    return(list(D, D_mis))
+
 
   } else if (missingness == "mcar2") {
     U_M <- array(runif(prod(dim(D))), dim(D))
@@ -241,7 +343,7 @@ amelia_data <- function(n = 500, missingness = "mcar1") {
 
     D_mis[!M] <- NA
 
-    return(list(D, D_mis))
+
   } else if (missingness == "mar1") {
     U_M <- array(runif(prod(dim(D))), dim(D))
 
@@ -256,7 +358,7 @@ amelia_data <- function(n = 500, missingness = "mcar1") {
 
     D_mis[!M] <- NA
 
-    return(list(D, D_mis))
+
   } else if (missingness == "mar2") {
     U_M <- array(runif(prod(dim(D))), dim(D))
 
@@ -271,7 +373,7 @@ amelia_data <- function(n = 500, missingness = "mcar1") {
 
     D_mis[!M] <- NA
 
-    return(list(D, D_mis))
+
   } else if (missingness == "ni") {
     U_M <- array(runif(prod(dim(D))), dim(D))
 
@@ -286,11 +388,27 @@ amelia_data <- function(n = 500, missingness = "mcar1") {
 
     D_mis[!M] <- NA
 
-    return(list(D, D_mis))
+
   }
 
+  res <- list(
+    D = D,
+    D_mis = D_mis,
+    analysis_model = function(x) {
+      lm(x[, 1] ~ x[, 2] + x[, 3])
+    },
+    true_values = c(0, -0.11, -0.089),
+    dgp_name = paste0("amelia_data_", missingness)
+  )
+  attr(res, "seed") <- store_seed
 
+
+  return(res)
 }
+
+
+
+
 
 summarize_mi_analysis <-
   function(res, true_values) {
@@ -299,17 +417,17 @@ summarize_mi_analysis <-
 
     tmp <- do.call(abind::abind, c(res, along = 3))
 
-    RB <- rowMeans(tmp[, "estimate",]) - true_values
+    RB <- rowMeans(tmp[, "estimate", ]) - true_values
     PB <-
-      100 * abs((rowMeans(tmp[, "estimate",]) - true_values) / true_values)
+      100 * abs((rowMeans(tmp[, "estimate", ]) - true_values) / true_values)
     NB <-
-      (rowMeans(tmp[, "estimate",]) - true_values) / apply(tmp[, "estimate",], 1, sd)
+      (rowMeans(tmp[, "estimate", ]) - true_values) / apply(tmp[, "estimate", ], 1, sd)
     CR <-
-      rowMeans(tmp[, "2.5 %",] < replicate(nsim, true_values) &
-                 replicate(nsim, true_values) < tmp[, "97.5 %",])
-    AW <- rowMeans(tmp[, "97.5 %",] - tmp[, "2.5 %",])
+      rowMeans(tmp[, "2.5 %", ] < replicate(nsim, true_values) &
+                 replicate(nsim, true_values) < tmp[, "97.5 %", ])
+    AW <- rowMeans(tmp[, "97.5 %", ] - tmp[, "2.5 %", ])
     RMSE <-
-      sqrt(rowMeans((tmp[, "estimate",] - replicate(nsim, true_values)) ^ 2))
+      sqrt(rowMeans((tmp[, "estimate", ] - replicate(nsim, true_values)) ^ 2))
     data.frame(RB, PB, NB, CR, AW, RMSE)
   }
 
@@ -353,32 +471,37 @@ pool_mi <- function(mi_obj, analysis_model) {
 
 
 ci_mi <- function(pool_obj, congenial = FALSE) {
-
-  if(congenial){
-    gamma_m <- (1 + 1 / pool_obj$m) * sum(diag(pool_obj$across_var %*% solve(pool_obj$total_var))) / pool_obj$k
+  if (congenial) {
+    gamma_m <-
+      (1 + 1 / pool_obj$m) * sum(diag(pool_obj$across_var %*% solve(pool_obj$total_var))) / pool_obj$k
 
     df_m <- (pool_obj$m - 1) * (gamma_m) ^ -2
 
     df_tilde_m <-
-      pool_obj$df_com * (((lambda_fct(pool_obj$df_com) * (1 - gamma_m)) ^ -1 + pool_obj$df_com / df_m) ^ -1)
+      pool_obj$df_com * (((
+        lambda_fct(pool_obj$df_com) * (1 - gamma_m)
+      ) ^ -1 + pool_obj$df_com / df_m) ^ -1)
 
     ci <- array(pool_obj$pooled_coef + c(
-      qt(c(0.025), df = df_tilde_m) * sqrt(diag(pool_obj$total_var)),
-      -qt(c(0.025), df = df_tilde_m) * sqrt(diag(pool_obj$total_var))
-    ), dim = c(pool_obj$k, 2))
+      qt(c(0.025), df = df_tilde_m) * sqrt(diag(pool_obj$total_var)),-qt(c(0.025), df = df_tilde_m) * sqrt(diag(pool_obj$total_var))
+    ),
+    dim = c(pool_obj$k, 2))
   } else {
-
-    gamma_m <- (1 + 1 / pool_obj$m) * sum(diag(pool_obj$across_var %*% solve(2*pool_obj$total_var))) / pool_obj$k
+    gamma_m <-
+      (1 + 1 / pool_obj$m) * sum(diag(pool_obj$across_var %*% solve(2 * pool_obj$total_var))) / pool_obj$k
 
     df_m <- (pool_obj$m - 1) * (gamma_m) ^ -2
 
     df_tilde_m <-
-      pool_obj$df_com * (((lambda_fct(pool_obj$df_com) * (1 - gamma_m)) ^ -1 + pool_obj$df_com / df_m) ^ -1)
+      pool_obj$df_com * (((
+        lambda_fct(pool_obj$df_com) * (1 - gamma_m)
+      ) ^ -1 + pool_obj$df_com / df_m) ^ -1)
 
     ci <- array(pool_obj$pooled_coef + c(
-      qt(c(0.025), df = df_tilde_m) * sqrt(diag(2*pool_obj$total_var)),
-      -qt(c(0.025), df = df_tilde_m) * sqrt(diag(2*pool_obj$total_var))
-    ), dim = c(pool_obj$k, 2))
+      qt(c(0.025), df = df_tilde_m) * sqrt(diag(2 * pool_obj$total_var)),-qt(c(0.025), df = df_tilde_m) * sqrt(diag(2 *
+                                                                                                                      pool_obj$total_var))
+    ),
+    dim = c(pool_obj$k, 2))
 
 
   }
@@ -422,7 +545,7 @@ dgp_fct <-
       data_list <- mixed_data(n_data, missingness)
       colnames(data_list$D) <- NULL
     } else if (dgp_name == "tbm") {
-      data_list <- tbm_data(n_data, missingness,...)
+      data_list <- tbm_data(n_data, missingness, ...)
     } else {
       stop("The data generating process you selected is not yet implemented...")
     }

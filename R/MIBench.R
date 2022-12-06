@@ -26,13 +26,13 @@ MIBench <- function(dgp = NULL,
                     MIalgorithm = NULL,
                     congenial = FALSE,
                     n_iter = 10,
-                    compare = T,
+                    compare = TRUE,
                     n_data = 500,
                     m = 10,
                     seed = NULL,
                     start_i = 1,
-                    store_runs = F,
-                    load_runs = F,
+                    store_runs = FALSE,
+                    load_runs = FALSE,
                     algorithm_prefix = "none") {
   set.seed(seed)
   seed_list <- sample(2 ^ 20, size = n_iter)
@@ -42,7 +42,7 @@ MIBench <- function(dgp = NULL,
   if (store_runs) {
     path <- paste0("experiments/", dgp, "/", algorithm_prefix, "/")
     if (!dir.exists(path)) {
-      dir.create(path, recursive = T)
+      dir.create(path, recursive = TRUE)
     }
   }
 
