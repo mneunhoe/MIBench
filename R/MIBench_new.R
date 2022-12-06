@@ -37,7 +37,7 @@ MIBench_new <-
       }
 
       saveRDS(res, paste0(path, "imputations_",
-                          i, ".RDS"))
+                          suffix, ".RDS"))
     }
 
     message("Please analyze the results in a separate step.")
