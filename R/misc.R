@@ -1,6 +1,102 @@
 #' @importFrom magrittr "%>%"
 # Function to generate data according to King et al 2001
 
+anes_data <- function(dv = "vote", miss.prop = .1) {
+  #Load and clean complete data
+  store_seed <- .Random.seed
+
+  anes <- anes2008_complete_cases
+
+  miss.data <-
+    cbind(1, scale(model.matrix(runif(nrow(
+      anes
+    )) ~ anes[, 2] + anes[, 3] + anes[, 9] + anes[, 11]))[,-1])
+  coef <-
+    matrix(rnorm(ncol(anes[,-c(2, 3, 9, 11)]) * ncol(miss.data)), ncol(miss.data), ncol(anes[,-c(2, 3, 9, 11)]))
+  miss.eta <- miss.data %*% coef
+  miss.error <-
+    rdata.frame(
+      nrow(anes),
+      restrictions = "none",
+      n_full = ncol(anes[,-c(2, 3, 9, 11)]),
+      n_partial = 0
+    )$true
+  miss.eta <- miss.eta + .3 * miss.error
+  miss.pr <-
+    apply(miss.eta, 2, plogis) - matrix(runif(nrow(miss.eta) * ncol(miss.eta)), nrow(miss.eta), ncol(miss.eta))
+  miss.indic <-
+    apply(
+      miss.pr,
+      2,
+      FUN = function(x) {
+        x >= quantile(x, (1 - miss.prop))
+      }
+    )
+  miss.indic <-
+    cbind(
+      miss.indic[, 1],
+      rep(FALSE, nrow(miss.indic)),
+      rep(FALSE, nrow(miss.indic)),
+      miss.indic[, 2:6],
+      rep(FALSE, nrow(miss.indic)),
+      miss.indic[, 7],
+      rep(FALSE, nrow(miss.indic))
+    )
+  anes.miss <- anes
+  is.na(anes.miss) <- miss.indic
+
+  if (dv == "vote") {
+    analysis_model <- function(x) {
+      nnet::multinom(
+        vote ~ age + female + as.numeric(education) + married + white + as.numeric(income) + religion,
+        data = x
+      )
+    }
+    true_values <- coef(analysis_model(anes))
+  }
+
+  if (dv == "time") {
+    analysis_model <- function(x) {
+      lm(
+        time ~ age + female + as.numeric(education) + married + white + as.numeric(income) + religion,
+        data = x
+      )
+    }
+    true_values <- coef(analysis_model(anes))
+  }
+
+  if (dv == "imp_enviro") {
+    analysis_model <- function(x) {
+      glm(
+        imp_enviro ~ age + female + as.numeric(education) + married + white + as.numeric(income) + religion,
+        family = binomial(link = "logit"),
+        data = x
+      )
+    }
+    true_values <- coef(analysis_model(anes))
+  }
+  if (dv == "jobs_r") {
+    analysis_model <- function(x) {
+      MASS::polr(
+        jobs_r ~ age + female + as.numeric(education) + married + white + as.numeric(income) + religion,
+        data = x
+      )
+    }
+    true_values <- coef(analysis_model(anes))
+  }
+
+
+  res <- list(
+    D = anes,
+    D_mis = anes.miss,
+    analysis_model = analysis_model,
+    true_values = true_values
+  )
+  attr(res, "seed") <- store_seed
+
+  return(res)
+}
+
 tbm_data <-
   function(n = 500,
            missingness = "mcar1",
