@@ -2,4 +2,6 @@
 
 export("%>%")
 export(MIBench)
+export(MIBench_light)
+export(MIBench_new)
 importFrom(magrittr,"%>%")
