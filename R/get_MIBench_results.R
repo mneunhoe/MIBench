@@ -65,7 +65,8 @@ get_MIBench_results <- function(obj) {
     uncongenial = results_uncongenial,
     lwd = results_lwd,
     infeasible = results_infeasible,
-    number_of_runs = length(obj)
+    number_of_runs = length(obj),
+    number_of_failed_runs = sum(sapply(mi_uncongenial_combining_rules, anyNA))
   )
 
   return(res)
