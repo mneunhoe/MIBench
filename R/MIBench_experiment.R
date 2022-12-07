@@ -1,4 +1,4 @@
-#' Run a experiment with MIBench
+#' Run an experiment with MIBench
 #'
 #' @param dgp A dgp function in the format of MIBench
 #' @param MIalgorithm A multiple imputation algorithm in the format of MIBench
@@ -17,7 +17,7 @@
 #' # Explicitily specifying a scenario.
 #' simloglm(regression, scenario = list(speed = c(5, 10, 20)))
 #'
-MIBench_new <-
+MIBench_experiment <-
   function(dgp = NULL,
             MIalgorithm = NULL,
             m = 10,
