@@ -1,8 +1,128 @@
 #' @importFrom magrittr "%>%"
 # Function to generate data according to King et al 2001
 
+kropko_data <- function(n = 1000, pr_miss = .25, ...) {
+  store_seed <- .Random.seed
+
+  .dgp <-
+    function(N,
+             N_FULL = 3L,
+             N_PARTIAL = 1,
+             restrict = "triangular",
+             ncat = 3,
+             type = "continuous",
+             pr_miss = .25,
+             imp_meth = "ppd",
+             strong = 0) {
+      if (type != "continuous" &
+          type != "binary" &
+          type != "ordinal" &
+          type != "nominal")
+        stop("Type must be continuous, binary, ordinal, or nominal")
+      cpc <- (restrict == "none")
+
+      rdf.names <-
+        c(paste("x_", 1:(N_FULL + N_PARTIAL), sep = ""), "y_1")
+
+      if (type == "continuous" |
+          type == "binary")
+        rdf <-
+        mi::rdata.frame(
+          N = N,
+          n_full = N_FULL,
+          n_partial = (N_PARTIAL + 1),
+          restrictions = restrict,
+          types = c(rep("continuous", (
+            N_FULL + N_PARTIAL
+          )), type),
+          pr_miss = c(rep(.1, N_PARTIAL), .25),
+          strong = strong,
+          estimate_CPCs = cpc
+        )
+      if (type == "ordinal" |
+          type == "nominal")
+        rdf <-
+        mi::rdata.frame(
+          N = N,
+          n_full = N_FULL,
+          n_partial = (N_PARTIAL + 1),
+          restrictions = restrict,
+          types = c(rep("continuous", (
+            N_FULL + N_PARTIAL
+          )), type),
+          pr_miss = c(rep(.1, N_PARTIAL), .25),
+          n_cat = ncat,
+          strong = strong,
+          estimate_CPCs = cpc
+        )
+
+      if (cpc)
+        nmar <- sqrt(mean(rdf$empirical_CPCs ^ 2))
+      else
+        nmar <- NA
+      data <- rdf$obs
+
+      true <- rdf$true
+      colnames(data) <- colnames(true) <- rdf.names
+
+      if (type == "continuous") {
+        analysis_model <- function(x) {
+          arm::bayesglm(y_1 ~ x_1 + x_2 + x_3 + x_4, data = x)
+        }
+      }
+
+      if (type == "binary") {
+        analysis_model <- function(x) {
+          arm::bayesglm(y_1 ~ x_1 + x_2 + x_3 + x_4,
+                        family = binomial(link = "logit"),
+                        data = x)
+        }
+      }
+
+      if (type == "ordinal") {
+        analysis_model <- function(x) {
+          arm::bayespolr(y_1 ~ x_1 + x_2 + x_3 + x_4,
+                         drop.unused.levels = FALSE,
+                         data = x)
+        }
+      }
+
+
+      if (type == "nominal") {
+        analysis_model <- function(x) {
+          nnet::multinom(y_1 ~ x_1 + x_2 + x_3 + x_4,
+                         data = x,
+                         maxit = 1000)
+        }
+      }
+
+
+      return(list(true,
+                  data,
+                  analysis_model,
+                  type))
+
+    }
+
+  tmp <- .dgp(N = n, pr_miss = pr_miss, ...)
+
+
+  res <- list(
+    D = tmp[[1]],
+    D_mis = tmp[[2]],
+    analysis_model = tmp[[3]],
+    true_values = NA,
+    dgp_name = paste0("kropko_data_", tmp[[4]], "_", gsub("\\.", "", paste(pr_miss)))
+  )
+  attr(res, "seed") <- store_seed
+
+  return(res)
+}
+
+
+
 anes_data <- function(dv = "vote", miss.prop = .1) {
-  #Load and clean complete data
+  #Load complete data
   store_seed <- .Random.seed
 
   anes <- anes2008_complete_cases
