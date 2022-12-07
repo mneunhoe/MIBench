@@ -26,13 +26,14 @@ run_MIBench_all_dgps <-
            n_repetitions = 1000,
            n_cores = 4,
            seed = NULL) {
-
     # Update this list if new dgps are added
     all_dgps <- c(amelia_data,
                   hd_data,
                   marbach_data,
                   mixed_data,
                   tbm_data)
+
+    res_list <- list()
 
     for (dgp in all_dgps) {
       for (mis in dgp()$missingness_patterns) {
@@ -50,23 +51,18 @@ run_MIBench_all_dgps <-
 
         res <- get_MIBench_results(tmp)
 
+        res_list[[paste0(tmp[[1]]$dgp_name, "_", tmp[[1]]$MI_name)]] <-
+          res
+
         if (store_results) {
           path <- here::here(paste0("results/"))
           if (!dir.exists(path)) {
             dir.create(path, recursive = TRUE)
           }
-
-
-
           saveRDS(res,
                   paste0(path, tmp[[1]]$dgp_name, "_", tmp[[1]]$MI_name, ".RDS"))
         }
-
       }
-
-
-
-
     }
-
+    return(res_list)
   }
