@@ -1,7 +1,7 @@
 #' @importFrom magrittr "%>%"
 # Function to generate data according to King et al 2001
 
-kropko_data <- function(n = 1000, pr_miss = .25, ...) {
+kropko_data <- function(n = 1000, missingness = .25, ...) {
   store_seed <- .Random.seed
 
   .dgp <-
@@ -104,7 +104,7 @@ kropko_data <- function(n = 1000, pr_miss = .25, ...) {
 
     }
 
-  tmp <- .dgp(N = n, pr_miss = pr_miss, ...)
+  tmp <- .dgp(N = n, pr_miss = missingness, ...)
 
 
   res <- list(
@@ -112,7 +112,8 @@ kropko_data <- function(n = 1000, pr_miss = .25, ...) {
     D_mis = tmp[[2]],
     analysis_model = tmp[[3]],
     true_values = NA,
-    dgp_name = paste0("kropko_data_", tmp[[4]], "_", gsub("\\.", "", paste(pr_miss)))
+    dgp_name = paste0("kropko_data_", tmp[[4]], "_", gsub("\\.", "", paste(missingness))),
+    missingness_patterns = c(0.25)
   )
   attr(res, "seed") <- store_seed
 
@@ -121,7 +122,7 @@ kropko_data <- function(n = 1000, pr_miss = .25, ...) {
 
 
 
-anes_data <- function(dv = "vote", miss.prop = .1) {
+anes_data <- function(dv = "vote", missingness = .1) {
   #Load complete data
   store_seed <- .Random.seed
 
@@ -149,7 +150,7 @@ anes_data <- function(dv = "vote", miss.prop = .1) {
       miss.pr,
       2,
       FUN = function(x) {
-        x >= quantile(x, (1 - miss.prop))
+        x >= quantile(x, (1 - missingness))
       }
     )
   miss.indic <-
@@ -211,7 +212,8 @@ anes_data <- function(dv = "vote", miss.prop = .1) {
     D_mis = anes.miss,
     analysis_model = analysis_model,
     true_values = true_values,
-    dgp_name = paste0("anes_data_", dv, "_", gsub("\\.", "", paste(miss.prop)))
+    dgp_name = paste0("anes_data_", dv, "_", gsub("\\.", "", paste(missingness))),
+    missingness_patterns = c(0.1)
   )
   attr(res, "seed") <- store_seed
 
@@ -317,7 +319,8 @@ tbm_data <-
         lm(x[, 1] ~ x[, 2] + x[, 3] + x[, 4] + x[, 11])
       },
       true_values = c(0, 1, 1, 1, 1),
-      dgp_name = paste0("tbm_data_", missingness)
+      dgp_name = paste0("tbm_data_", missingness),
+      missingness_patterns = c("mcar1")
     )
     attr(res, "seed") <- store_seed
 
@@ -366,7 +369,8 @@ mixed_data <-
         lm(x[, 3] ~ x[, 1] * x[, 2])
       },
       true_values = coefs,
-      dgp_name = paste0("mixed_data_", missingness)
+      dgp_name = paste0("mixed_data_", missingness),
+      missingness_patterns = c("mcar1")
     )
     attr(res, "seed") <- store_seed
 
@@ -418,7 +422,8 @@ marbach_data <-
           lm(x[, 1] ~ x[, 2] * x[, 3])
         },
         true_values = coefs,
-        dgp_name = paste0("marbach_data_", missingness)
+        dgp_name = paste0("marbach_data_", missingness),
+        missingness_patterns = c("mar1")
       )
       attr(res, "seed") <- store_seed
       return(res)
@@ -485,7 +490,8 @@ hd_data <- function(n = 500, missingness = "mar1") {
       glm(x[, 1] ~ x[, 3] + x[, 4], family = binomial(link = logit))
     },
     true_values = c(-1.912, 1.912, 1.912),
-    dgp_name = paste0("hd_data_", missingness)
+    dgp_name = paste0("hd_data_", missingness),
+    missingness_patterns = c("mar1", "mar2", "mar3")
   )
   attr(res, "seed") <- store_seed
 
@@ -615,7 +621,8 @@ amelia_data <- function(n = 500, missingness = "mcar1") {
       lm(x[, 1] ~ x[, 2] + x[, 3])
     },
     true_values = c(0, -0.11, -0.089),
-    dgp_name = paste0("amelia_data_", missingness)
+    dgp_name = paste0("amelia_data_", missingness),
+    missingness_patterns = c("mcar1", "mcar2", "mar1", "mar2", "ni")
   )
   attr(res, "seed") <- store_seed
 
