@@ -11,6 +11,7 @@ repeat_MIbench_experiment(
   store_runs = TRUE,
   n_repetitions = 1000,
   n_cores = 4,
+  seed = NULL,
   ...
 )
 }
@@ -26,6 +27,8 @@ repeat_MIbench_experiment(
 \item{n_repetitions}{The number of repetitions (default is 1000) with fresh draws from the dgp function.}
 
 \item{n_cores}{The number of cores for parallel processing of the experiments.}
+
+\item{seed}{A random seed for the experiments. Note that a exact replication depends on the seed and the number of cores \code{n_cores}.}
 
 \item{...}{Additional arguments for the dgp function}
 }
