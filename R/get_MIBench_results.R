@@ -49,16 +49,16 @@ get_MIBench_results <- function(obj) {
 
 
   results_uncongenial <-
-    MIBench:::summarize_mi_analysis(Filter(Negate(anyNA), uncon_list), obj[[1]]$true_values)
+    MIBench:::summarize_mi_analysis(Filter(Negate(anyNA), mi_uncongenial_combining_rules), obj[[1]]$true_values)
 
   results_congenial <-
-    MIBench:::summarize_mi_analysis(Filter(Negate(anyNA), con_list), obj[[1]]$true_values)
+    MIBench:::summarize_mi_analysis(Filter(Negate(anyNA), mi_congenial_combining_rules), obj[[1]]$true_values)
 
   results_lwd <-
     MIBench:::summarize_mi_analysis(Filter(Negate(anyNA), lwd), obj[[1]]$true_values)
 
   results_infeasible <-
-    MIBench:::summarize_mi_analysis(Filter(Negate(anyNA), infeas), obj[[1]]$true_values)
+    MIBench:::summarize_mi_analysis(Filter(Negate(anyNA), infeasible), obj[[1]]$true_values)
 
   res <- list(
     congenial = results_congenial,
