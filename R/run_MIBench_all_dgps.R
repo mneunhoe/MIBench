@@ -26,15 +26,26 @@ run_MIBench_all_dgps <-
            n_repetitions = 1000,
            n_cores = 4,
            seed = NULL) {
+
+    # Update this list if new dgps are added
+    all_dgps <- c(amelia_data,
+                  hd_data,
+                  marbach_data,
+                  mixed_data,
+                  tbm_data)
+
     for (dgp in all_dgps) {
-      for (m in dgp()$missingness_patterns) {
+      for (mis in dgp()$missingness_patterns) {
         tmp <-
           repeat_MIbench_experiment(
             dgp = dgp,
             MIalgorithm = MIalgorithm,
+            m = m,
+            store_runs = store_runs,
             n_repetitions = n_repetitions,
+            n_cores = n_cores,
             seed = seed,
-            missingness = m
+            missingness = mis
           )
 
         res <- get_MIBench_results(tmp)

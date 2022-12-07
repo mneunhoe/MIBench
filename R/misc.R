@@ -1,14 +1,10 @@
 #' @importFrom magrittr "%>%"
 # Function to generate data according to King et al 2001
 
-all_dgps <- c(amelia_data,
-              hd_data,
-              marbach_data,
-              mixed_data,
-              tbm_data)
 
-kropko_dgps <- c(kropko_data,
-                 anes_data)
+
+# kropko_dgps <- c(kropko_data,
+#                  anes_data)
 
 
 kropko_data <- function(n = 1000, missingness = .25, ...) {
