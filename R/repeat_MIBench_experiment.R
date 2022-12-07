@@ -23,7 +23,7 @@ repeat_MIbench_experiment <-
   function(dgp,
            MIalgorithm,
            m = 10,
-           store_runs = TRUE,
+           store_runs = FALSE,
            n_repetitions = 1000,
            n_cores = 4,
            seed = NULL,
