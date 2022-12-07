@@ -27,7 +27,9 @@ MIBench_experiment <-
 
 
     res <- dgp(...)
+    store_seed <- attr(res, "seed")
     res <- append(res, MIalgorithm(res$D_mis, m = m))
+    attr(res, "seed") <- store_seed
 
     if (store_runs) {
       path <- here::here(paste0("experiments/", res$dgp_name, "/", res$MI_name,
