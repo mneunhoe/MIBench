@@ -64,7 +64,8 @@ get_MIBench_results <- function(obj) {
     congenial = results_congenial,
     uncongenial = results_uncongenial,
     lwd = results_lwd,
-    infeasible = results_infeasible
+    infeasible = results_infeasible,
+    number_of_runs = length(obj)
   )
 
   return(res)
