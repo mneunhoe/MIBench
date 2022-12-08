@@ -30,8 +30,7 @@ run_MIBench_all_dgps <-
     all_dgps <- c(amelia_data,
                   hd_data,
                   marbach_data,
-                  mixed_data,
-                  tbm_data)
+                  mixed_data)
 
     res_list <- list()
 
