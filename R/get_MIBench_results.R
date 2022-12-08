@@ -27,7 +27,8 @@ get_MIBench_results <- function(obj) {
         NA
     ))
 
-  lwd <- lapply(obj, function(x) {
+  lwd <- lapply(obj, function(x)
+    tryCatch({
     tmp <- x$analysis_model(x$D_mis)
 
     res <- cbind(coef(tmp), confint(tmp))
@@ -35,9 +36,11 @@ get_MIBench_results <- function(obj) {
     colnames(res) <- c("estimate", "2.5 %", "97.5 %")
     rownames(res) <- NULL
     return(res)
-  })
+  },
+  error = function(e) NA))
 
-  infeasible <- lapply(obj, function(x) {
+  infeasible <- lapply(obj, function(x)
+    tryCatch({
     tmp <- x$analysis_model(x$D)
 
     res <- cbind(coef(tmp), confint(tmp))
@@ -45,7 +48,8 @@ get_MIBench_results <- function(obj) {
     colnames(res) <- c("estimate", "2.5 %", "97.5 %")
     rownames(res) <- NULL
     return(res)
-  })
+  },
+  error = function(e) NA))
 
 
   results_uncongenial <-
