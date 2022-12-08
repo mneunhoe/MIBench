@@ -45,6 +45,7 @@ repeat_MIbench_experiment <-
       mc.cores = n_cores,
       mc.allow.error = TRUE,
       mc.allow.fatal = TRUE,
-      mc.cleanup = TRUE
+      mc.cleanup = TRUE,
+      mc.silent = TRUE
     )
   }
