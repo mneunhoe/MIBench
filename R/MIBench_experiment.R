@@ -44,7 +44,6 @@ MIBench_experiment <-
                           suffix, ".RDS"))
     }
 
-    message("Please analyze the results in a separate step.")
     return(res)
 
 
