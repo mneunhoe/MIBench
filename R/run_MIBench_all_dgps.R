@@ -51,7 +51,7 @@ run_MIBench_all_dgps <-
 
         res <- get_MIBench_results(tmp)
 
-        res_list[[paste0(tmp[[1]]$dgp_name, "_", tmp[[1]]$MI_name)]] <-
+        res_list[[paste0(dgp(missingness = mis)$dgp_name, "_", MIalgorithm$MI_name)]] <-
           res
 
         if (store_results) {
@@ -60,7 +60,7 @@ run_MIBench_all_dgps <-
             dir.create(path, recursive = TRUE)
           }
           saveRDS(res,
-                  paste0(path, tmp[[1]]$dgp_name, "_", tmp[[1]]$MI_name, ".RDS"))
+                  paste0(path, dgp(missingness = mis)$dgp_name, "_", MIalgorithm$MI_name, ".RDS"))
         }
       }
     }
