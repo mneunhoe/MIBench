@@ -28,11 +28,13 @@ MIBench_experiment <-
 
     res <- dgp(...)
     store_seed <- attr(res, "seed")
-    res <- append(res, MIalgorithm(res$D_mis, m = m))
+    MI_res <- tryCatch(MIalgorithm(res$D_mis, m = m), error = function(e) list(imputations = NA, MI_name = MIalgorithm()$MI_name))
+
+    res <- append(res, MI_res)
     attr(res, "seed") <- store_seed
 
     if (store_runs) {
-      path <- here::here(paste0("experiments/", res$dgp_name, "/", res$MI_name,
+      path <- here::here(paste0("experiments/", res$dgp_name, "/", MIalgorithm()$MI_name,
                      "/"))
       if (!dir.exists(path)) {
         dir.create(path, recursive = TRUE)
