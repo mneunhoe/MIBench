@@ -361,10 +361,22 @@ mixed_data <-
     } else if (missingness == "mcar1") {
       U_M <- array(runif(prod(dim(D))), dim(D))
       M <- U_M > 0.19
-      M[, 3] <- T
+      M[, 3] <- TRUE
       D_mis <- D
       D_mis[!M] <- NA
 
+
+
+    } else if (missingness == "mar1") {
+      U_M <- array(runif(prod(dim(D))), dim(D))
+
+      M[, 3] <- TRUE
+
+      M[,1] <- U_M [,1] > 0.19 & D[,3] > -1
+      M[,2] <- U_M [,2] > 0.19 & D[,3] > -1
+
+      D_mis <- D
+      D_mis[!M] <- NA
 
 
     }
@@ -376,7 +388,7 @@ mixed_data <-
       },
       true_values = coefs,
       dgp_name = paste0("mixed_data_", missingness),
-      missingness_patterns = c("mcar1")
+      missingness_patterns = c("mcar1", "mar1")
     )
     attr(res, "seed") <- store_seed
 
@@ -519,29 +531,11 @@ amelia_data <- function(n = 500, missingness = "mcar1") {
 
   cor_mat <- matrix(
     c(
-      1 ,
-      -.12,
-      -.1,
-      .5,
-      .1,-.12,
-      1,
-      .1,
-      -.6,
-      .1,-.1,
-      .1,
-      1,
-      -.5,
-      .1,
-      .5,
-      -.6,
-      -.5,
-      1,
-      .1,
-      .1,
-      .1,
-      .1,
-      .1,
-      1
+      1 ,-.12,-.1,.5,.1,
+      -.12,1,.1,-.6,.1,
+      -.1,.1,1,-.5,.1,
+      .5,-.6,-.5,1,.1,
+      .1,.1,.1,.1,1
     ),
     nrow = 5,
     ncol = 5,
@@ -793,4 +787,142 @@ quiet <- function(x) {
   sink(tempfile())
   on.exit(sink())
   invisible(force(x))
+}
+
+
+plot_MIBench_results <- function(dgp = "amelia_data", results_folder = "results", save_plot = TRUE, plot_folder = "figures"){
+
+  all_results_files <- list.files(results_folder)
+
+
+
+  all_results <-
+    lapply(all_results_files, function(x)
+      readRDS(paste0(results_folder, "/", x)))
+
+
+
+  names(all_results) <- gsub("\\.RDS", "", all_results_files)
+
+
+
+
+  dgp_results <-
+    names(all_results)[grepl(paste0(dgp, "_*.*_"), names(all_results))]
+
+  pattern <- "data_\\s*(.*?)\\s*_"
+  tmp <- regmatches(dgp_results, regexec(pattern, dgp_results))
+
+
+  missingness_patterns <- unique(sapply(tmp, function(x)
+    x[2]))
+
+
+
+  pattern <- paste0(".*_", missingness_patterns, "_\\s*(.*)\\s*")
+  tmp_list <-
+    lapply(pattern, function(x)
+      regmatches(dgp_results, regexec(x, dgp_results)))
+  tmp <-
+    unique(do.call("c", lapply(tmp_list, function(y)
+      unique(
+        sapply(y, function(x)
+          x[2])
+      ))))
+
+  MI_models <- tmp[!is.na(tmp)]
+
+
+  sublist <-
+    all_results[paste0(dgp, "_", missingness_patterns[1], "_", MI_models)]
+
+  plot_res <- lapply(sublist, function(x)
+    x$congenial[, c("CR", "AW")])
+  plot_res$lwd <-
+    lapply(sublist, function(x)
+      x$lwd[, c("CR", "AW")])[[1]]
+  plot_res$infeasible <-
+    lapply(sublist, function(x)
+      x$infeasible[, c("CR", "AW")])[[1]]
+
+  n_coef <- nrow(plot_res[[1]])
+
+  old_par <- par()
+
+  if(save_plot) png(filename = paste0(plot_folder, "/", dgp, ".png"), width = as.integer(1024*n_coef), height = as.integer(768*length(missingness_patterns)),
+                    units = "px", res = 300 )
+  par(oma = c(3, 1, 1, 1), mfrow = c(length(missingness_patterns), n_coef))
+
+
+  for(m in missingness_patterns){
+
+    sublist <-
+      all_results[paste0(dgp, "_", m, "_", MI_models)]
+
+    plot_res <- lapply(sublist, function(x)
+      x$congenial[, c("CR", "AW")])
+    plot_res$lwd <-
+      lapply(sublist, function(x)
+        x$lwd[, c("CR", "AW")])[[1]]
+    plot_res$infeasible <-
+      lapply(sublist, function(x)
+        x$infeasible[, c("CR", "AW")])[[1]]
+
+
+    plot_res <- plot_res[c(length(plot_res), length(plot_res)-1, 1:(length(plot_res)-2))]
+
+    for (i in 1:n_coef) {
+      x_data <- as.numeric(sapply(plot_res, function(x)
+        x[i, ])[2, ])
+      y_data <- as.numeric(sapply(plot_res, function(x)
+        x[i, ])[1, ])
+
+
+
+      plot(
+        x_data,
+        y_data,
+        ylim = quantile(pretty(c(y_data, 1)), c(0, 1)),
+        bty = "n",
+        las = 1,
+        col = viridis::viridis(length(plot_res)),
+        pch = 0:(length(plot_res)-1),
+        cex = 1,
+        ylab = "Coverage",
+        xlab = "Width",
+        main = bquote(atop(.("DGP:")~ .(dgp)*.(",")~.("Missingness:")~ .(m), beta[.(i-1)]))
+      )
+
+      abline(h = 0.95, lty = "dashed", col = "lightgrey")
+
+
+    }
+  }
+
+  par(fig = c(0, 1, 0, 1),
+      oma = c(0, 0, 0, 0),
+      mar = c(0, 0, 0, 0),
+      new = TRUE)
+  plot(
+    0,
+    0,
+    type = 'l',
+    bty = 'n',
+    xaxt = 'n',
+    yaxt = 'n'
+  )
+  legend(
+    'bottom',
+    legend = c("infeasible", "lwd", MI_models),
+    col = viridis::viridis(length(plot_res)),
+    pch = 0:(length(plot_res)-1),
+    xpd = TRUE,
+    horiz = TRUE,
+    cex = 1,
+    seg.len = 1,
+    bty = 'n'
+  )
+
+  if(save_plot) dev.off()
+  quiet(par(old_par))
 }
