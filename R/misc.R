@@ -370,6 +370,8 @@ mixed_data <-
     } else if (missingness == "mar1") {
       U_M <- array(runif(prod(dim(D))), dim(D))
 
+      M <- array(FALSE, dim(D))
+
       M[, 3] <- TRUE
 
       M[,1] <- U_M [,1] > 0.19 & D[,3] > -1
