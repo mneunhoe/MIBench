@@ -670,8 +670,9 @@ pool_mi <- function(mi_obj, analysis_model) {
   m <- length(fit_list)
 
   k <- length(coef(fit_list[[1]]))
+  n <- nrow(mi_obj[[1]])
   df_com <- summary(fit_list[[1]])$df[2]
-
+  if(is.null(df_com)) df_com <- n - k
   Q_bar <- rowMeans(sapply(fit_list, coef))
 
   U_bar <- array(rowMeans(sapply(fit_list, vcov)), dim = c(k, k))
