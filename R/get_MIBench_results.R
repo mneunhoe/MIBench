@@ -31,7 +31,19 @@ get_MIBench_results <- function(obj) {
     tryCatch({
     tmp <- x$analysis_model(x$D_mis)
 
-    res <- cbind(coef(tmp), confint(tmp))
+    tmp_ci <- confint(tmp)
+
+    if(length(dim(tmp_ci)>2)){
+      tmp_ci1 <- NULL
+      for(i in 1:dim(tmp_ci)[3]){
+        tmp_ci1 <- rbind(tmp_ci1, tmp_ci[,,i])
+      }
+
+      tmp_ci <- tmp_ci1[c(matrix(1:dim(tmp_ci1)[1], nrow = dim(tmp_ci)[3], byrow = T)),]
+
+    }
+
+    res <- cbind(as.numeric(coef(tmp)), tmp_ci)
 
     colnames(res) <- c("estimate", "2.5 %", "97.5 %")
     rownames(res) <- NULL
@@ -43,7 +55,19 @@ get_MIBench_results <- function(obj) {
     tryCatch({
     tmp <- x$analysis_model(x$D)
 
-    res <- cbind(coef(tmp), confint(tmp))
+    tmp_ci <- confint(tmp)
+
+    if(length(dim(tmp_ci)>2)){
+      tmp_ci1 <- NULL
+      for(i in 1:dim(tmp_ci)[3]){
+        tmp_ci1 <- rbind(tmp_ci1, tmp_ci[,,i])
+      }
+
+      tmp_ci <- tmp_ci1[c(matrix(1:dim(tmp_ci1)[1], nrow = dim(tmp_ci)[3], byrow = T)),]
+
+    }
+
+    res <- cbind(as.numeric(coef(tmp)), tmp_ci)
 
     colnames(res) <- c("estimate", "2.5 %", "97.5 %")
     rownames(res) <- NULL
